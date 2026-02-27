@@ -3,35 +3,66 @@ layout: ../layouts/AboutLayout.astro
 title: "About"
 ---
 
-AstroPaper is a minimal, accessible and SEO-friendly blog theme built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
+안녕하세요, **김봉섭**입니다.
+응용 소프트웨어 개발자로 안전보건 관리 시스템, 모바일 앱, 클라우드 전환 사업 등 다양한 프로젝트에 참여해 왔습니다.
 
-![Astro Paper](public/astropaper-og.jpg)
+## 이렇게 일합니다
 
-AstroPaper provides a solid foundation for blogs, or even portfolios\_ with full markdown support, built-in dark mode, and a clean layout that works out-of-the-box.
+AI가 단순 보조 도구가 아닌, **개발 파이프라인 전 단계에 참여**하는 워크플로우를 지향합니다.
+Claude Code Plugins와 CodeRabbit을 통합하여 계획부터 배포, 리뷰까지 자동화된 흐름으로 개발합니다.
 
-The blog posts in this theme also serve as guides, docs or example articles\_ making AstroPaper a flexible starting point for your next content-driven site.
+**Plan → Implement → Verify → Deliver**
 
-## Features
+| 단계 | 도구 | 역할 |
+| --- | --- | --- |
+| 계획 | Superpowers (Brainstorm, Plans) | 요구사항 분석, 구현 계획 |
+| 구현 | Superpowers (TDD), Frontend Design | 테스트 우선 개발, UI 구축 |
+| 지원 | Context7, TypeScript LSP | 라이브러리 참조, 타입 검사 |
+| 검증 | Superpowers (Debug, Verify) | 체계적 디버깅, 완료 검증 |
+| 배포 | Commit Commands | 자동화된 커밋, 푸시, PR |
+| 리뷰 | CodeRabbit, Code Review | PR 자동 리뷰, 품질 관리 |
+| 유지보수 | Code Simplifier, Claude MD | 코드 정리, 문서 관리 |
 
-AstroPaper comes with a set of useful features that make content publishing easy and effective:
+## 기술 스택
 
-- SEO-friendly
-- Fast performance
-- Light & dark mode
-- Highly customizable
-- Organizable blog posts
-- Responsive & accessible
-- Static search with [PageFind](https://pagefind.app/)
-- Automatic social image generation
+- **Mobile** — React Native, Expo, TypeScript
+- **Web** — React, Vite
+- **Backend** — Supabase
+- **Tooling** — Turborepo, pnpm, Vitest
 
-and so much more.
+---
 
-## Show your support
+## 근무 경력
 
-If you like [AstroPaper](https://github.com/satnaing/astro-paper), consider giving it a star ⭐️.
+### 주식회사 되고시스템 <span style="font-size: 0.8em; color: #22c55e;">재직중</span>
 
-Found a bug 🐛 or have an improvement ✨ in mind? Feel free to open an [issue](https://github.com/satnaing/astro-paper/issues), submit a [pull request](https://github.com/satnaing/astro-paper/pulls) or start a [discussion](https://github.com/satnaing/astro-paper/discussions).
+**2024.11.12 ~ 현재** | SW개발 > 응용SW개발
 
-If you find this theme helpful, you can also [sponsor me on GitHub](https://github.com/sponsors/satnaing) or [buy me a coffee](https://buymeacoffee.com/satnaing) to show your support — every penny counts.
+---
 
-Kyay zuu! 🙏🏼
+### 콜라보스튜디오
+
+**2023.08.14 ~ 2024.10.28** | SW개발 > 응용SW개발
+
+---
+
+## 프로젝트 경력
+
+### 주식회사 되고시스템
+
+| 프로젝트 | 수행 기간 |
+| --- | --- |
+| 에스원 안전보건 전산시스템 구축 | 2025.08.19 ~ 2025.11.13 |
+| 성신양회 안전보건 전산시스템 구축 | 2025.07.22 ~ 2025.11.13 |
+| 한국철도공사 산업안전보건관리시스템 구축 용역 | 2025.05.30 ~ 2025.11.13 |
+| 현대아이에스씨&현대아이엠씨 안전보건관리시스템 구축 | 2024.11.12 ~ 2025.04.30 |
+| 동국씨엠 안전관리시스템 구축 | 2024.12.01 ~ 2025.05.31 |
+| 삼구아이앤씨 안전점검 관리자시스템 구축 | 2024.11.12 ~ 2024.12.31 |
+
+### 콜라보스튜디오
+
+| 프로젝트 | 수행 기간 |
+| --- | --- |
+| 세종 행정안전부 클라우드 네이티브 기반 시스템 시범전환 사업 | 2024.06.03 ~ 2024.10.28 |
+| 디오션 포인트 기반 SNS 어플리케이션 개발 | 2024.03.01 ~ 2024.06.01 |
+| 필미 AI 손톱 진단 어플리케이션 개발 | 2023.08.14 ~ 2024.03.01 |
