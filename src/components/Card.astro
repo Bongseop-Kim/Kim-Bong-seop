@@ -2,7 +2,9 @@
 import type { CollectionEntry } from "astro:content";
 import { slugifyStr } from "@/utils/slugify";
 import { getPath } from "@/utils/getPath";
+import { Image } from "astro:assets";
 import Datetime from "./Datetime.astro";
+import { SITE } from "@/config";
 
 type Props = {
   variant?: "h2" | "h3";
@@ -10,12 +12,27 @@ type Props = {
 
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 
-const { title, description, ...props } = data;
+const { title, description, ogImage, ...props } = data;
+
+const href = getPath(id, filePath);
+// 커버가 없으면 자동 생성 OG 이미지로 대체
+const cover = ogImage ?? (SITE.dynamicOgImage ? `${href}/index.png` : undefined);
 ---
 
 <li class="my-6">
+  {
+    cover && (
+      <a href={href} tabindex="-1" aria-hidden="true">
+        {typeof cover === "string" ? (
+          <img src={cover} alt="" loading="lazy" class="mb-3 aspect-video w-full rounded-md object-cover" />
+        ) : (
+          <Image src={cover} alt="" widths={[400, 800]} sizes="(min-width: 768px) 768px, 100vw" class="mb-3 aspect-video w-full rounded-md object-cover" />
+        )}
+      </a>
+    )
+  }
   <a
-    href={getPath(id, filePath)}
+    {href}
     class:list={[
       "inline-block text-lg font-medium text-accent",
       "decoration-dashed underline-offset-4 hover:underline",

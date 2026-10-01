@@ -47,6 +47,19 @@ async function loadGoogleFonts(
       weight: 700,
       style: "bold",
     },
+    // 한글 글리프 대체용
+    {
+      name: "Noto Sans KR",
+      font: "Noto+Sans+KR",
+      weight: 400,
+      style: "normal",
+    },
+    {
+      name: "Noto Sans KR",
+      font: "Noto+Sans+KR",
+      weight: 700,
+      style: "bold",
+    },
   ];
 
   const fonts = await Promise.all(
