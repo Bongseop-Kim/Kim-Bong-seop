@@ -1,10 +1,10 @@
 ---
 author: Kim Bong-seop
-pubDatetime: 2026-10-01T15:00:00Z
+pubDatetime: 2026-10-01T05:00:00Z
 title: "GitLab 이슈를 Claude Code 루틴이 받아 MR까지 — 판단력보다 권한 경계로 설계한 자동 처리"
 slug: gitlab-issue-claude-routine
 featured: false
-draft: true
+draft: false
 tags:
   - claude-code
   - llm

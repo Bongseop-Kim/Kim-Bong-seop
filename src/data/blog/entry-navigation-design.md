@@ -4,7 +4,7 @@ pubDatetime: 2026-10-01T00:00:00Z
 title: "모바일 앱 진입 경로 통합 — 딥링크·shortcut·푸시·QR을 한 파이프라인으로"
 slug: mobile-entry-navigation-design
 featured: false
-draft: true
+draft: false
 tags:
   - react-native
   - expo

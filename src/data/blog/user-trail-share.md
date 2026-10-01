@@ -1,10 +1,10 @@
 ---
 author: Kim Bong-seop
-pubDatetime: 2026-10-01T18:00:00Z
+pubDatetime: 2026-10-01T07:00:00Z
 title: "고객이 보내는 사용 기록으로 앱 오류를 추적하는 시스템 만들기 — Sentry의 breadcrumb 기능을 참고"
 slug: mobile-user-trail-share
 featured: false
-draft: true
+draft: false
 tags:
   - react-native
   - expo

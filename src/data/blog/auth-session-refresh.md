@@ -4,7 +4,7 @@ pubDatetime: 2026-10-01T00:00:00Z
 title: "토큰 갱신과 사업장 전환 경합 정리 — single-flight와 epoch로 세운 세션 규칙"
 slug: mobile-auth-session-refresh
 featured: false
-draft: true
+draft: false
 tags:
   - react-native
   - expo

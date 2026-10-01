@@ -1,10 +1,10 @@
 ---
 author: Kim Bong-seop
-pubDatetime: 2026-10-01T12:00:00Z
+pubDatetime: 2026-10-01T03:00:00Z
 title: "EAS Android 빌드 28분을 13분으로 — Gradle 캐시, ccache, ABI 축소, precompiled headers"
 slug: eas-android-build-time
 featured: false
-draft: true
+draft: false
 tags:
   - react-native
   - expo
