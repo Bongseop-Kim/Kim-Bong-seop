@@ -15,7 +15,7 @@ description: Superpowers의 프로젝트 구조, 동작 원리, 스킬 시스템
 
 > 소스: [github.com/obra/superpowers](https://github.com/obra/superpowers) (v4.3.1, MIT License)
 
-이 글은 **[Part 1. oh-my-bridge: Claude Code 멀티 LLM 오케스트레이션 전략](/posts/claude-code-multi-llm-orchestration)**의 프레임워크 선택 근거를 뒷받침하는 기술 분석이다. Superpowers의 프로젝트 구조, 동작 원리, 스킬 시스템을 실제 소스코드 기반으로 정리한다.
+이 글은 oh-my-bridge 프레임워크 선택 근거를 뒷받침하는 기술 분석이다. Superpowers의 프로젝트 구조, 동작 원리, 스킬 시스템을 실제 소스코드 기반으로 정리한다.
 
 ---
 
@@ -187,7 +187,7 @@ Plan 읽기 → 태스크 추출 → TodoWrite 생성
 
 ### codex-generator SubAgent와의 연결점
 
-Superpowers는 이미 "서브에이전트에게 태스크 위임 → 2단계 리뷰 → fix 루프" 패턴을 가지고 있다. `codex-generator` SubAgent는 이 패턴에서 **Implementer 서브에이전트(Claude) 대신 GPT-5.3-codex를 호출**하는 변형이다 (상세: **[Part 5. oh-my-bridge 구현 가이드 — SubAgent 오케스트레이션](/posts/oh-my-bridge)**).
+Superpowers는 이미 "서브에이전트에게 태스크 위임 → 2단계 리뷰 → fix 루프" 패턴을 가지고 있다. `codex-generator` SubAgent는 이 패턴에서 **Implementer 서브에이전트(Claude) 대신 GPT-5.3-codex를 호출**하는 변형이다.
 
 ---
 
@@ -237,7 +237,7 @@ superpowers/skills/subagent-driven-development/SKILL.md   ← 원본 유지, 무
 
 이는 **Superpowers가 모델 선택을 전적으로 사용자에게 위임**한다는 뜻이다. 어떤 모델로 실행하든 스킬 내용은 동일하게 주입되며, 그 내용을 해석하고 따르는 주체는 사용자가 선택한 모델이다.
 
-이 특성이 **[Part 1에서 opusplan을 권장](/posts/claude-code-multi-llm-orchestration)**하는 근거다. Superpowers의 스킬 규칙은 어떤 모델에서도 동일하게 동작하므로, 설계·계획에는 Opus를, 코드 수정에는 Sonnet을 자동 배분하는 opusplan을 얹어도 Superpowers가 이를 방해하지 않는다.
+Superpowers의 스킬 규칙은 어떤 모델에서도 동일하게 동작하므로, 설계·계획에는 Opus를, 코드 수정에는 Sonnet을 자동 배분하는 opusplan을 얹어도 Superpowers가 이를 방해하지 않는다.
 
 ---
 
@@ -247,4 +247,4 @@ superpowers/skills/subagent-driven-development/SKILL.md   ← 원본 유지, 무
 - **[Part 2. Inside Superpowers](/posts/inside-superpowers)** — 스킬 시스템 동작 원리, SubAgent 패턴 상세
 - **[Part 3. Inside Oh My Opencode](/posts/inside-oh-my-opencode)** — 설계 패턴 레퍼런스, 멀티 에이전트 오케스트레이션, 도구 혁신
 - **[Part 4. Inside Oh My Claudecode](/posts/inside-oh-my-claudecode)** — 훅 기반 인터셉션, 에이전트 티어, autopilot 파이프라인
-- **[Part 5. Oh My Bridge: 플러그인 구성과 작동 방식](/posts/oh-my-bridge)** — 플러그인 구성과 작동 방식
+- **[Part 5. Oh My Bridge: 플러그인 구성과 작동 방식](/posts/oh-my-bridge)** — Skill 기반 라우팅, MCP + SubAgent 구성, 안정성 설계

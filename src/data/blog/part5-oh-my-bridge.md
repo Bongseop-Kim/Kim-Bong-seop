@@ -10,16 +10,16 @@ tags:
   - llm
   - mcp
   - workflow
-description: oh-my-bridge 플러그인의 구성 요소와 작동 방식을 단계별로 정리한다. MCP 서버 등록, SubAgent 정의, PreToolUse 자동 인터셉션, PostToolUse 비용 로깅, 안정성 설계를 포함한다.
+description: oh-my-bridge 플러그인의 구성 요소와 작동 방식을 단계별로 정리한다. Skill 기반 라우팅, MCP 서버 등록, SubAgent 정의, PostToolUse 비용 로깅, 안정성 설계를 포함한다.
 ---
 
 **oh-my-bridge**는 Claude Code 워크플로우에 외부 LLM(GPT-5.3-codex)을 통합하는 Claude Code 플러그인이다.
 
 MCP Server → SubAgent → Hook → Skill → Plugin 레이어를 쌓아 Codex CLI(GPT-5.3-codex)를 Claude Code 워크플로우에 통합한다.
 
-> **소스 코드:** [github.com/Bongseop-Kim/oh-my-bridge](https://github.com/Bongseop-Kim/oh-my-bridge)
+현재 구조의 핵심은 **Skill 기반 라우팅**이다. Claude가 작업 의도를 분류하고, 복잡한 코드 생성은 Codex MCP를 직접 호출하고, 단순 수정은 Claude 네이티브 편집을 그대로 진행한다. 초기에는 PreToolUse 훅으로 Edit/Write를 가로채는 방식을 시도했으나 UX 문제(deny가 Error로 렌더링)와 의도 기반 라우팅의 필요성으로 Skill 기반으로 전환했다.
 
-전략과 배경은 **[Part 1. Oh My Bridge: Claude Code 멀티 LLM 오케스트레이션 전략](/posts/claude-code-multi-llm-orchestration)**을 참조한다.
+> **소스 코드:** [github.com/Bongseop-Kim/oh-my-bridge](https://github.com/Bongseop-Kim/oh-my-bridge)
 
 ---
 
@@ -34,10 +34,11 @@ oh-my-bridge/
 │   └── codex-generator.md             SubAgent 정의
 ├── hooks/
 │   ├── hooks.json                     Hook 이벤트 바인딩
-│   ├── codex-interceptor.sh           PreToolUse 자동 인터셉션
 │   ├── log-codex-usage.sh             JSONL 사용량 로깅
 │   └── codex-fallback.sh              장애 감지 + fallback 주입
 ├── skills/
+│   ├── oh-my-bridge/
+│   │   └── SKILL.md                   라우팅 규칙 (code-routing skill)
 │   └── subagent-driven-development/
 │       ├── SKILL.md                   워크플로우 오버라이드
 │       └── implementer-prompt.md      위임 프롬프트 템플릿
@@ -48,39 +49,28 @@ oh-my-bridge/
 
 ## 2. 전체 실행 흐름
 
-플러그인은 두 가지 진입점을 통해 Codex를 자동으로 활용한다.
-
-### 경로 A — 자동 인터셉션 (PreToolUse)
-
-Claude가 코드 파일을 편집하려는 순간 훅이 개입한다. 사용자의 별도 명령 없이 동작한다.
-
-```
-사용자 요청 (일반 코드 편집)
-  → Claude가 Edit | Write 도구 호출 시도
-  → PreToolUse Hook 발화 (codex-interceptor.sh)
-      → 코드 파일 확장자 확인 (.js .ts .py .go 등)
-      → codex -q -a full-auto --writable-roots {cwd} "{prompt}"
-      → Codex 성공 → permissionDecision: deny  (Codex가 이미 수정 완료)
-      → Codex 실패 → permissionDecision: allow (Claude 네이티브로 폴백)
-```
-
-### 경로 B — 명시적 스킬 트리거 (Superpowers)
-
-대규모 구현 태스크에 대해 전체 리뷰 파이프라인을 실행한다.
+### 단일 흐름: Skill 기반 라우팅
 
 ```
 사용자 요청
-  → /subagent-driven-development 스킬 트리거 (Superpowers)
-  → Step 1: codex-generator SubAgent 디스패치 (haiku 오케스트레이터)
-      → 7-Section 위임 프롬프트 조합
-      → codex -q -a full-auto --writable-roots "$(pwd)" "{prompt}"
-      → GPT-5.3-codex가 파일 직접 생성/수정
-      → 결과 검증 (파일 존재 확인, 문법 검사)
-      → PostToolUse Hook 자동 트리거
-          → log-codex-usage.sh: JSONL 로그 기록
-          → codex-fallback.sh: 에러 감지 → additionalContext 주입
-  → Step 2: Spec Reviewer SubAgent (Claude 네이티브, 원본 그대로)
-  → Step 3: Code Quality Reviewer SubAgent (Claude 네이티브, 원본 그대로)
+  → Claude가 oh-my-bridge 라우팅 규칙 판단
+      → 복잡한 코드 생성·로직 구현
+          → mcp__codex 호출
+          → Codex CLI(GPT-5.3-codex)가 파일 직접 생성/수정
+          → PostToolUse Hook 자동 트리거
+              → log-codex-usage.sh: JSONL 로그 기록
+              → codex-fallback.sh: 에러 감지 → additionalContext 주입
+      → 단순 수정·설정·오타
+          → Claude 네이티브 Edit/Write
+```
+
+### Plan mode 실행 시
+
+```
+Plan mode → ExitPlanMode
+  → routing pass: 단계별 작업에 대해 라우팅 기준 검토
+  → 복잡한 코드 생성 단계 → Codex 라우팅
+  → 단순 수정 단계 → Claude 네이티브
 ```
 
 ---
@@ -139,85 +129,21 @@ permissionMode: acceptEdits
 
 실패 시 SubAgent는 자체 수정이나 재시도를 하지 않고 부모 세션에 에러를 보고한다. 재시도는 `codex-fallback.sh`의 `additionalContext`를 읽은 Claude가 결정한다.
 
-### 3.3 Hook — `hooks/`
+### 3.3 Skill — `skills/`
 
-훅 패턴의 배경은 **[Part 3. Inside oh-my-opencode — Hook 시스템](/posts/inside-oh-my-opencode)**과 **[Part 4. Inside oh-my-claudecode — 훅 기반 인터셉션 레이어](/posts/inside-oh-my-claudecode)**에서 분석한다.
+**`skills/oh-my-bridge/SKILL.md` — 라우팅 규칙 (code-routing skill):**
 
-**`hooks/hooks.json`:**
+Claude가 작업을 시작하기 전 이 Skill을 트리거하여 Codex로 라우팅할지 결정한다.
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [{
-      "matcher": "Edit|Write",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/codex-interceptor.sh",
-          "timeout": 180,
-          "statusMessage": "Routing to Codex CLI..."
-        }
-      ]
-    }],
-    "PostToolUse": [{
-      "matcher": "mcp__plugin_oh-my-bridge_codex__.*",
-      "hooks": [
-        {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/log-codex-usage.sh"},
-        {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/codex-fallback.sh"}
-      ]
-    }]
-  }
-}
-```
+라우팅 판단 기준:
+- **로직 유무**: 새 함수, 알고리즘, 비즈니스 로직 구현 → Codex
+- **복잡도**: 여러 파일에 걸친 변경, 새 모듈 생성 → Codex
+- **파일 유형**: 설정 파일(.json, .yaml), 마크다운, lock 파일 → Claude 네이티브
+- **단순 수정**: 오타, TODO 추가, 주석 삽입 → Claude 네이티브
 
-**`codex-interceptor.sh` — PreToolUse 자동 인터셉션:**
-
-Claude가 Edit 또는 Write 도구를 호출하기 직전에 발화한다. 코드 파일 확장자를 확인하고, 해당하는 경우 Codex CLI를 직접 실행한다.
-
-```
-코드 파일 (.js .ts .py .go .rs 등)
-  → Codex 실행 → 성공 → permissionDecision: deny  (Codex가 이미 수정)
-                → 실패 → permissionDecision: allow (Claude 네이티브 폴백)
-
-비코드 파일 (.json .yaml .md .lock 등)
-  → exit 0 → Claude 네이티브 그대로 통과
-```
-
-- **Edit** 인터셉션: `old_string`/`new_string` 정보를 프롬프트로 변환해 Codex에 전달. `echo` 방식으로 구성해 `%s`, `%d` 등 포맷 문자가 포함된 코드도 안전하게 처리한다.
-- **Write** 인터셉션: Claude가 이미 최종 내용을 결정한 상태이므로 훅이 파일을 직접 기록한다. Codex에게 파일 경로를 추론하게 하는 방식은 쓰지 않는다.
-- `codex` 바이너리가 없으면 `exit 0`으로 Claude 네이티브를 허용한다.
-
-**`log-codex-usage.sh` — PostToolUse JSONL 사용량 로깅:**
-
-Codex MCP 호출 후 `~/.claude/logs/codex-usage.log`에 추가한다.
-
-```json
-{
-  "timestamp": "2026-02-28T08:59:54Z",
-  "tool": "mcp__plugin_oh-my-bridge_codex__codex",
-  "status": "success",
-  "exit_code": "",
-  "error": ""
-}
-```
-
-**`codex-fallback.sh` — PostToolUse 장애 감지 + fallback 주입:**
-
-Codex 응답에서 `.error` 필드 또는 비정상 `exit_code`를 감지하면 `additionalContext`를 출력한다.
-
-```bash
-{"additionalContext": "⚠️ Codex 호출 실패. 동일 태스크를 codex-generator SubAgent 대신 Claude 네이티브 SubAgent로 재실행하라."}
-```
-
-성공 시 아무것도 출력하지 않으며 Claude Code가 정상적으로 진행한다. 훅은 감지 역할만 담당하고, 실제 fallback 전환은 `additionalContext`를 읽은 Claude가 결정한다.
-
-### 3.4 Skill — `skills/subagent-driven-development/`
+**`skills/subagent-driven-development/SKILL.md` — 오버라이드 워크플로우:**
 
 Superpowers의 `subagent-driven-development` 스킬을 오버라이드한다. Implementer를 `codex-generator` SubAgent로 교체하고, Spec Reviewer / Code Quality Reviewer는 원본 그대로 유지한다.
-
-오버라이드 메커니즘 상세는 **[Part 2. Inside Superpowers](/posts/inside-superpowers)**를 참조한다.
-
-**`SKILL.md` — 오버라이드 워크플로우:**
 
 ```
 1. Implementer: codex-generator SubAgent 디스패치
@@ -246,7 +172,49 @@ Superpowers의 `subagent-driven-development` 스킬을 오버라이드한다. Im
 
 Stateless 재시도 시 `CONTEXT` 섹션에 이전 시도 기록을 포함한다. 최대 3회 시도 후 부모 세션으로 에스컬레이션한다.
 
-GPT(principle-driven)에는 간결한 목표와 제약만 제시하고, Claude(mechanics-driven)에는 상세한 체크리스트를 명시하는 방식의 차이는 **[Part 3. Inside oh-my-opencode — 모델 성격 매칭](/posts/inside-oh-my-opencode)**에서 실증 데이터(프롬프트 줄 수 차이)와 함께 분석한다.
+### 3.4 Hook — `hooks/`
+
+훅은 PostToolUse 로깅과 fallback만 담당한다. PreToolUse 인터셉션(Edit/Write 가로채기)은 제거했다.
+
+**`hooks/hooks.json`:**
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "mcp__plugin_oh-my-bridge_codex__.*",
+      "hooks": [
+        {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/log-codex-usage.sh"},
+        {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/codex-fallback.sh"}
+      ]
+    }]
+  }
+}
+```
+
+**`log-codex-usage.sh` — PostToolUse JSONL 사용량 로깅:**
+
+Codex MCP 호출 후 `~/.claude/logs/codex-usage.log`에 추가한다.
+
+```json
+{
+  "timestamp": "2026-02-28T08:59:54Z",
+  "tool": "mcp__plugin_oh-my-bridge_codex__codex",
+  "status": "success",
+  "exit_code": "",
+  "error": ""
+}
+```
+
+**`codex-fallback.sh` — PostToolUse 장애 감지 + fallback 주입:**
+
+Codex 응답에서 `.error` 필드 또는 비정상 `exit_code`를 감지하면 `additionalContext`를 출력한다.
+
+```bash
+{"additionalContext": "⚠️ Codex 호출 실패. 동일 태스크를 codex-generator SubAgent 대신 Claude 네이티브 SubAgent로 재실행하라."}
+```
+
+성공 시 아무것도 출력하지 않으며 Claude Code가 정상적으로 진행한다. 훅은 감지 역할만 담당하고, 실제 fallback 전환은 `additionalContext`를 읽은 Claude가 결정한다.
 
 ---
 
@@ -265,12 +233,12 @@ GPT(principle-driven)에는 간결한 목표와 제약만 제시하고, Claude(m
 - `agents/codex-generator.md` → SubAgent 자동 등록 (플러그인 `agents/` 자동 스캔)
 - `hooks/hooks.json` → `PostToolUse` 훅 바인딩 (`${CLAUDE_PLUGIN_ROOT}` = 플러그인 캐시 경로)
 
-### Phase 3: 스킬 오버라이드 (Superpowers 필요)
+### Phase 3: 스킬 배포 (Superpowers 필요)
 
 `/plugin install`은 `skills/`를 `~/.claude/skills/`에 복사하지 않는다. 수동 배포가 필요하다.
 
 ```bash
-# setup.sh로 자동 배포
+# setup.sh로 자동 배포 (code-routing skill + subagent-driven-development 오버라이드)
 ./setup.sh
 
 # 되돌리기
@@ -280,6 +248,11 @@ GPT(principle-driven)에는 간결한 목표와 제약만 제시하고, Claude(m
 또는 수동:
 
 ```bash
+# code-routing skill
+mkdir -p ~/.claude/skills/oh-my-bridge
+cp skills/oh-my-bridge/SKILL.md ~/.claude/skills/oh-my-bridge/
+
+# subagent-driven-development 오버라이드 (Superpowers 있는 경우)
 mkdir -p ~/.claude/skills/subagent-driven-development
 cp skills/subagent-driven-development/SKILL.md ~/.claude/skills/subagent-driven-development/
 cp skills/subagent-driven-development/implementer-prompt.md ~/.claude/skills/subagent-driven-development/
@@ -309,6 +282,15 @@ plugin:oh-my-bridge:codex · ✔ connected
 oh-my-bridge:codex-generator · haiku
 ```
 
+### Skill 라우팅 확인
+
+```bash
+head -6 ~/.claude/skills/oh-my-bridge/SKILL.md
+# "oh-my-bridge routing" 텍스트가 나오면 정상
+```
+
+라우팅 동작 확인: 코드 생성 요청 시 Claude가 `mcp__plugin_oh-my-bridge_codex__codex`를 호출하는지 세션 로그에서 확인한다.
+
 ### Hook 로그
 
 Codex MCP 호출 후:
@@ -321,32 +303,13 @@ tail -5 ~/.claude/logs/codex-usage.log | jq .
 jq 'select(.status == "error")' ~/.claude/logs/codex-usage.log
 ```
 
-### 스킬 오버라이드
-
-```bash
-head -6 ~/.claude/skills/subagent-driven-development/SKILL.md
-# "oh-my-bridge override" 텍스트가 나오면 정상
-```
-
 ### E2E 흐름 확인
 
 ```
-/subagent-driven-development implement a hello world function in /tmp/hello-bridge.js
+새 함수 hello()를 /tmp/hello-bridge.js에 구현해줘
 ```
 
-정상 실행 시:
-
-```
-⏺ Step 1: Dispatching Implementer (codex-generator SubAgent)
-
-⏺ oh-my-bridge:codex-generator(...)
-  ⎿  Done (...)
-
-⏺ Step 2 & 3: Dispatching Spec Reviewer and Code Quality Reviewer in parallel
-...
-```
-
-`oh-my-bridge:codex-generator`가 Implementer로 디스패치되면 전체 흐름 정상.
+정상 실행 시 Claude가 `mcp__plugin_oh-my-bridge_codex__codex`를 호출하고, Codex가 파일을 직접 생성한다. Hook 로그에 해당 호출이 기록되어야 한다.
 
 ---
 
@@ -354,8 +317,8 @@ head -6 ~/.claude/skills/subagent-driven-development/SKILL.md
 
 | 통제 수단 | 구현 방식 |
 |-----------|----------|
-| 코드 편집 자동 라우팅 | `PreToolUse` 훅 (`codex-interceptor.sh`) → Edit\|Write 인터셉트 |
-| 외부 모델 호출 범위 | 코드 파일 확장자 필터 + 스킬 트리거 조건 + SubAgent description |
+| 라우팅 판단 | Skill 규칙 + Claude 의도 분류 |
+| 외부 모델 호출 범위 | Skill 라우팅 기준 + SubAgent description |
 | fix loop 반복 제한 | SubAgent `maxTurns: 10` + 스킬 "최대 3회" 규칙 |
 | 쓰기 경로 제한 | `--writable-roots "$(pwd)"` |
 | 비용 추적 | `log-codex-usage.sh` JSONL 로깅 |
@@ -369,7 +332,7 @@ head -6 ~/.claude/skills/subagent-driven-development/SKILL.md
 
 ### full-auto 모드 리스크 완화
 
-`codex -a full-auto`는 GPT가 파일을 자율적으로 수정한다. 의도치 않은 덮어쓰기를 방지하기 위해 **git worktree 격리**를 권장한다. 외부 모델의 파일 편집 정확도 자체의 문제(해시 기반 편집 패턴 등)는 **[Part 3. Inside oh-my-opencode — 하네스 문제](/posts/inside-oh-my-opencode)**에서 다룬다.
+`codex -a full-auto`는 GPT가 파일을 자율적으로 수정한다. 의도치 않은 덮어쓰기를 방지하기 위해 **git worktree 격리**를 권장한다.
 
 ```bash
 # Implementer 실행 전 worktree 생성
@@ -406,4 +369,4 @@ Attempt 3 (전체 히스토리)
 - **[Part 2. Inside Superpowers](/posts/inside-superpowers)** — 스킬 시스템 동작 원리, SubAgent 패턴 상세
 - **[Part 3. Inside Oh My Opencode](/posts/inside-oh-my-opencode)** — 설계 패턴 레퍼런스, 멀티 에이전트 오케스트레이션, 도구 혁신
 - **[Part 4. Inside Oh My Claudecode](/posts/inside-oh-my-claudecode)** — 훅 기반 인터셉션, 에이전트 티어, autopilot 파이프라인
-- **[Part 5. Oh My Bridge: 플러그인 구성과 작동 방식](/posts/oh-my-bridge)** — 플러그인 구성과 작동 방식
+- **[Part 5. Oh My Bridge: 플러그인 구성과 작동 방식](/posts/oh-my-bridge)** — Skill 기반 라우팅, MCP + SubAgent 구성, 안정성 설계
