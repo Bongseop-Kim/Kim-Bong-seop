@@ -119,8 +119,17 @@ html[data-theme="dark"] {
   @apply max-w-3xl;
 }
 
+/* 헤더·푸터·목록은 PC에서 넓게, 글 본문처럼 읽는 영역은 app-layout-narrow로 가운데 정렬 */
 @utility app-layout {
+  @apply mx-auto w-full max-w-app px-4 lg:max-w-6xl;
+}
+
+@utility app-layout-narrow {
   @apply mx-auto w-full max-w-app px-4;
+}
+
+@utility post-grid {
+  @apply grid grid-cols-1 gap-x-8 md:grid-cols-2 lg:grid-cols-3;
 }
 
 .active-nav {

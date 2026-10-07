@@ -22,7 +22,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 <Layout>
   <Header />
   <main id="main-content" data-layout="index" class="app-layout">
-    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border"]}>
+    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border", "[&>p]:max-w-3xl"]}>
       <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
         안녕하세요
       </h1>
@@ -75,7 +75,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
           ]}
         >
           <h2 class="text-2xl font-semibold tracking-wide">주요 포스트</h2>
-          <ul>
+          <ul class="post-grid">
             {featuredPosts.map(data => (
               <Card variant="h3" {...data} />
             ))}
@@ -88,7 +88,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       recentPosts.length > 0 && (
         <section id="recent-posts" class="pt-12 pb-6">
           <h2 class="text-2xl font-semibold tracking-wide">최근 포스트</h2>
-          <ul>
+          <ul class="post-grid">
             {recentPosts.map(
               (data, index) =>
                 index < SITE.postPerIndex && <Card variant="h3" {...data} />
