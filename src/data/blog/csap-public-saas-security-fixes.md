@@ -4,7 +4,7 @@ pubDatetime: 2026-11-09T00:00:00Z
 title: "CSAP 공공판 출시 전 보안 결함 조치 — 비로그인 링크와 RLS, 마스킹 값 덮어쓰기, 요청 로그, AI 사진 위치정보"
 slug: csap-public-saas-security-fixes
 featured: false
-draft: true
+draft: false
 tags:
   - security
   - postgresql
