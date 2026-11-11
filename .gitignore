@@ -29,3 +29,5 @@ pnpm-debug.log*
 # pagefind
 
 public/pagefind
+# 비공개 원자료 (회사 내부 정보 포함, 커밋 금지)
+notes/
